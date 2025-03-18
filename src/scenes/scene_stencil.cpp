@@ -10,8 +10,6 @@
 
 #include <iostream>
 
-const float ROCK_SCALE_FACTOR = 2.0f;
-
 SceneStencil::SceneStencil(Resources& res, bool& isMouseMotionEnabled)
 : Scene(res)
 , m_isMouseMotionEnabled(isMouseMotionEnabled)
@@ -102,7 +100,7 @@ void SceneStencil::run(Window& w, double dt)
     glStencilMask(0xFF);
 
     glm::mat4 modelRock = glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 0.4f, 0.0f));
-    modelRock = glm::scale(modelRock, glm::vec3(ROCK_SCALE_FACTOR, ROCK_SCALE_FACTOR, ROCK_SCALE_FACTOR));
+    modelRock = glm::scale(modelRock, glm::vec3(2.0f, 2.0f, 2.0f));
     {
         glm::mat4 mvp = proj * view * modelRock;
         m_resources.texture.use();
@@ -129,7 +127,21 @@ void SceneStencil::run(Window& w, double dt)
     glStencilMask(0xFF);
     glClear(GL_STENCIL_BUFFER_BIT);
 
-
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+    // vitre
+    glm::mat4 modelGlass = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, -0.1f, 0.0f));
+    modelGlass = glm::scale(modelGlass, glm::vec3(2.0f, 2.0f, 2.0f));
+    {
+        glm::mat4 mvp = proj * view * modelGlass;
+        m_resources.texture.use();
+        m_glassTexture.use();
+        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
+        m_glass.draw();
+    }
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
     // monkeys statues
     {
     glm::mat4 modelMonkeys1 = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, -0.1f, 4.0f));
