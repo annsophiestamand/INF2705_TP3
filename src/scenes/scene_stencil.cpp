@@ -10,6 +10,8 @@
 
 #include <iostream>
 
+const float ROCK_SCALE_FACTOR = 3.0f;
+const float SUZANNE_TRANSLATION_FACTOR = 6.0f;
 
 SceneStencil::SceneStencil(Resources& res, bool& isMouseMotionEnabled)
 : Scene(res)
@@ -74,6 +76,38 @@ void SceneStencil::run(Window& w, double dt)
     
     // TODO Dessin de la scène de stencil
     // utiliser les shaders texture et simpleColor ici
+
+    // sol
+    {
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.1f, 0.0f));
+        glm::mat4 mvp = proj * view * model;
+        m_resources.texture.use();
+        m_groundTexture.use();
+        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
+        m_groundDraw.draw();
+    }
+
+    // roche
+    glm::mat4 modelRock = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.1f, 0.0f));
+    modelRock = glm::scale(modelRock, glm::vec3(ROCK_SCALE_FACTOR, ROCK_SCALE_FACTOR, ROCK_SCALE_FACTOR));
+    {
+        glm::mat4 mvp = proj * view * modelRock;
+        m_resources.texture.use();
+        m_rockTexture.use();
+        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
+        m_rock.draw();
+    }
+
+    // Suzanne
+    glm::mat4 modelSuzanne = glm::translate(glm::mat4(1.0f), glm::vec3(SUZANNE_TRANSLATION_FACTOR, 0.1f, 0.0f));
+    {
+        glm::mat4 mvp = proj * view * modelSuzanne;
+        m_resources.texture.use();
+        m_suzanneTexture.use();
+        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
+        m_suzanne.draw();
+    }
+
 }
 
 void SceneStencil::updateInput(Window& w, double dt)
