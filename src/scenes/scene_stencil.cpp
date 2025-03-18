@@ -88,6 +88,10 @@ void SceneStencil::run(Window& w, double dt)
     }
 
     // roche
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilMask(0xFF);
+
     glm::mat4 modelRock = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.1f, 0.0f));
     modelRock = glm::scale(modelRock, glm::vec3(ROCK_SCALE_FACTOR, ROCK_SCALE_FACTOR, ROCK_SCALE_FACTOR));
     {
@@ -97,10 +101,15 @@ void SceneStencil::run(Window& w, double dt)
         glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
         m_rock.draw();
     }
+    glStencilMask(0x00);
 
-    // Suzanne
+    // real Suzanne
+    glDisable(GL_DEPTH_TEST); // Désactiver, sinon on va toujours voir la roche par dessus
     glm::mat4 modelSuzanne = glm::translate(glm::mat4(1.0f), glm::vec3(SUZANNE_TRANSLATION_FACTOR, 0.1f, 0.0f));
     {
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+
         glm::mat4 mvp = proj * view * modelSuzanne;
         m_resources.texture.use();
         m_suzanneTexture.use();
@@ -108,6 +117,20 @@ void SceneStencil::run(Window& w, double dt)
         m_suzanne.draw();
     }
 
+    // simple color Suzanne
+    {
+        glStencilFunc(GL_EQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+
+        glm::mat4 mvp = proj * view * modelSuzanne;
+        m_resources.simpleColor.use();
+        glUniformMatrix4fv(m_resources.mvpLocationSimpleColor, 1, GL_FALSE, &mvp[0][0]);
+        m_suzanne.draw();
+    }
+    glEnable(GL_DEPTH_TEST);
+    glStencilFunc(GL_ALWAYS, 0, 0xFF);
+    glStencilMask(0xFF);
+    glClear(GL_STENCIL_BUFFER_BIT);
 }
 
 void SceneStencil::updateInput(Window& w, double dt)
