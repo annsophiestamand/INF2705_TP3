@@ -118,7 +118,7 @@ void SceneStencil::run(Window& w, double dt)
         glStencilFunc(GL_EQUAL, 1, 0xFF);
         glStencilMask(0x00);
 
-        glm::mat4 mvp = proj * view * modelSuzanne;
+        glm::mat4 mvp = proj * view * modelSuzanne; // COMMENT CALCULER UNE SEULE FOIS ??????????????????
         m_resources.simpleColor.use();
         glUniformMatrix4fv(m_resources.mvpLocationSimpleColor, 1, GL_FALSE, &mvp[0][0]);
         m_suzanne.draw();
@@ -128,6 +128,45 @@ void SceneStencil::run(Window& w, double dt)
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
     glStencilMask(0xFF);
     glClear(GL_STENCIL_BUFFER_BIT);
+
+
+    // monkeys statues
+    {
+    glm::mat4 modelMonkeys1 = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, -0.1f, 4.0f));
+    modelMonkeys1 = glm::rotate(modelMonkeys1, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));     
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+
+        glm::mat4 mvp = proj * view * modelMonkeys1;
+        m_resources.texture.use();
+        m_suzanneWhiteTexture.use();
+        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
+        m_suzanne.draw();
+    }
+    {
+    glm::mat4 modelMonkeys2 = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, -0.1f, 0.0f));
+    modelMonkeys2 = glm::rotate(modelMonkeys2, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+
+        glm::mat4 mvp = proj * view * modelMonkeys2;
+        m_resources.texture.use();
+        m_suzanneWhiteTexture.use();
+        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
+        m_suzanne.draw();
+    }
+    {
+    glm::mat4 modelMonkeys3 = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, -0.1f, -4.0f));
+    modelMonkeys3 = glm::rotate(modelMonkeys3, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+
+        glm::mat4 mvp = proj * view * modelMonkeys3;
+        m_resources.texture.use();
+        m_suzanneWhiteTexture.use();
+        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
+        m_suzanne.draw();
+    }
 }
 
 void SceneStencil::updateInput(Window& w, double dt)
