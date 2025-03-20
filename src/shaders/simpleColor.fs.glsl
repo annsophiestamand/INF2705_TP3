@@ -1,9 +1,13 @@
 #version 330 core
 
-uniform vec3 color; // mettre une constante pour la couleur + ajouter texture
+uniform sampler2D grid_texture;
 out vec4 FragColor;
 
 void main()
 {
-    FragColor = vec4(color, 1.0);
-} 
+    vec2 texCoords = gl_FragCoord.xy / 100.0;
+    vec4 texColor = texture(grid_texture, texCoords);
+
+    vec3 tintColor = vec3(0.25, 0.8, 1.0);
+    FragColor = vec4(texColor.rgb * tintColor, texColor.a);
+}
