@@ -1,6 +1,6 @@
 #version 330 core
 
-uniform vec3 color;
+uniform vec3 color; // mettre une constante pour la couleur + ajouter texture
 out vec4 FragColor;
 
 void main()
