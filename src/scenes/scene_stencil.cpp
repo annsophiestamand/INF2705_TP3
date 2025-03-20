@@ -129,56 +129,45 @@ void SceneStencil::run(Window& w, double dt)
     glClear(GL_STENCIL_BUFFER_BIT);
 
     // monkeys statues
-    { // shader + texture en haut pour éviter duplication 
-    glm::mat4 modelMonkeys1 = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, -0.1f, 4.0f));
-    modelMonkeys1 = glm::rotate(modelMonkeys1, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));     
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glStencilMask(0x00);
-
-        glm::mat4 mvp = proj * view * modelMonkeys1;
-        m_resources.texture.use();
-        m_suzanneWhiteTexture.use();
-        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
-        m_suzanne.draw();
-    }
     {
-    glm::mat4 modelMonkeys2 = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, -0.1f, 0.0f));
-    modelMonkeys2 = glm::rotate(modelMonkeys2, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glStencilMask(0x00);
-
-        glm::mat4 mvp = proj * view * modelMonkeys2;
+        const std::vector<glm::vec3> monkeyPositions = {
+            {12.0f, -0.1f,  4.0f},
+            {12.0f, -0.1f,  0.0f},
+            {12.0f, -0.1f, -4.0f}
+        };
         m_resources.texture.use();
         m_suzanneWhiteTexture.use();
-        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
-        m_suzanne.draw();
-    }
-    {
-    glm::mat4 modelMonkeys3 = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, -0.1f, -4.0f));
-    modelMonkeys3 = glm::rotate(modelMonkeys3, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glStencilMask(0x00);
 
-        glm::mat4 mvp = proj * view * modelMonkeys3;
-        m_resources.texture.use();
-        m_suzanneWhiteTexture.use();
-        glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
-        m_suzanne.draw();
+        for (const auto& pos : monkeyPositions) {
+            glm::mat4 modelMonkeys = glm::translate(glm::mat4(1.0f), pos);
+            modelMonkeys = glm::rotate(modelMonkeys, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        
+            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+            glStencilMask(0x00);
+        
+            glm::mat4 mvp = proj * view * modelMonkeys;
+            glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
+        
+            m_suzanne.draw();
+        }
     }
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_CULL_FACE);
+    
     // vitre
-    glm::mat4 modelGlass = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, -0.1f, 0.0f));
-    modelGlass = glm::scale(modelGlass, glm::vec3(2.0f, 2.0f, 2.0f));
     {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_CULL_FACE);
+        
+        glm::mat4 modelGlass = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, -0.1f, 0.0f));
+        modelGlass = glm::scale(modelGlass, glm::vec3(2.0f, 2.0f, 2.0f));
+
         glm::mat4 mvp = proj * view * modelGlass;
         m_resources.texture.use();
         m_glassTexture.use();
         glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
         m_glass.draw();
     }
+    
     glDisable(GL_BLEND);
     glEnable(GL_CULL_FACE);
 }
