@@ -73,8 +73,8 @@ void SceneStencil::run(Window& w, double dt)
     
     // sol
     {
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.1f, 0.0f));
-        glm::mat4 mvp = proj * view * model;
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.1f, 0.0f));
+        mvp = projView * model;
         m_resources.texture.use();
         m_groundTexture.use();
         glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
@@ -87,7 +87,7 @@ void SceneStencil::run(Window& w, double dt)
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
 
-        glm::mat4 mvp = proj * view * modelSuzanne;
+        mvp = projView * modelSuzanne;
         m_resources.texture.use();
         m_suzanneTexture.use();
         glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
@@ -99,10 +99,10 @@ void SceneStencil::run(Window& w, double dt)
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     glStencilMask(0xFF);
 
-    glm::mat4 modelRock = glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 0.4f, 0.0f));
-    modelRock = glm::scale(modelRock, glm::vec3(2.0f, 2.0f, 2.0f));
+    model = glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 0.4f, 0.0f));
+    model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
     {
-        glm::mat4 mvp = proj * view * modelRock;
+        mvp = projView * model;
         m_resources.texture.use();
         m_rockTexture.use();
         glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
@@ -116,7 +116,7 @@ void SceneStencil::run(Window& w, double dt)
         glStencilFunc(GL_EQUAL, 1, 0xFF);
         glStencilMask(0x00);
 
-        glm::mat4 mvp = proj * view * modelSuzanne; // COMMENT CALCULER UNE SEULE FOIS ??????????????????
+        mvp = projView * modelSuzanne;
         m_resources.simpleColor.use();
         m_whiteGridTexture.use();
         glUniformMatrix4fv(m_resources.mvpLocationSimpleColor, 1, GL_FALSE, &mvp[0][0]);
@@ -139,13 +139,13 @@ void SceneStencil::run(Window& w, double dt)
         m_suzanneWhiteTexture.use();
 
         for (const auto& pos : monkeyPositions) {
-            glm::mat4 modelMonkeys = glm::translate(glm::mat4(1.0f), pos);
-            modelMonkeys = glm::rotate(modelMonkeys, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::translate(glm::mat4(1.0f), pos);
+            model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         
             glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
             glStencilMask(0x00);
         
-            glm::mat4 mvp = proj * view * modelMonkeys;
+            mvp = projView * model;
             glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
         
             m_suzanne.draw();
@@ -153,15 +153,15 @@ void SceneStencil::run(Window& w, double dt)
     }
     
     // vitre
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+    
     {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable(GL_CULL_FACE);
-        
-        glm::mat4 modelGlass = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, -0.1f, 0.0f));
-        modelGlass = glm::scale(modelGlass, glm::vec3(2.0f, 2.0f, 2.0f));
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, -0.1f, 0.0f));
+        model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
 
-        glm::mat4 mvp = proj * view * modelGlass;
+        mvp = projView * model;
         m_resources.texture.use();
         m_glassTexture.use();
         glUniformMatrix4fv(m_resources.mvpLocationTexture, 1, GL_FALSE, &mvp[0][0]);
