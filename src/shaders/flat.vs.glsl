@@ -9,9 +9,13 @@ out ATTRIB_OUT
     vec2 texCoords;
 } attribOut;
 
+uniform mat4 modelView;
 uniform mat4 mvp;
 
 void main()
 {
-    // TODO
+    vec4 posView = modelView * vec4(position, 1.0);
+    gl_Position = mvp * vec4(position, 1.0);
+    attribOut.texCoords = texCoords;
+    attribOut.position  = position.xyz;
 }
