@@ -52,66 +52,86 @@ layout (std140) uniform LightingBlock
     float spotOpeningAngle;
 };
 
+float calcSpotIntensity(vec3 sDir, vec3 lDir, vec3 norm, float cosAngle, float cosFalloff)
+{
+    float normDot = dot(sDir, norm);
+    if(normDot < 0.0) return 0.0;
+    
+    float spotDot = dot(lDir, sDir);
+    
+    if(useDirect3D) {
+        return smoothstep(cosFalloff, cosAngle, spotDot);
+    } else {
+        return spotDot > cosAngle ? pow(spotDot, spotExponent) : 0.0;
+    }
+}
+
+void calcLightComponents(int idx, vec3 norm, vec3 lDir, vec3 vDir, out vec3 diff, out vec3 spec)
+{
+    float diffFactor = max(dot(norm, lDir), 0.0);
+    diff = diffFactor * lights[idx].diffuse * mat.diffuse;
+    
+    float specFactor;
+    if(useBlinn) {
+        vec3 halfVec = normalize(lDir + vDir);
+        specFactor = max(dot(norm, halfVec), 0.0);
+    } else {
+        vec3 reflectVec = reflect(-lDir, norm);
+        specFactor = max(dot(vDir, reflectVec), 0.0);
+    }
+    
+    specFactor = pow(specFactor, mat.shininess);
+    spec = specFactor * lights[idx].specular * mat.specular;
+}
 
 void main()
 {
-    vec3 p0 = attribIn[0].position;
-    vec3 p1 = attribIn[1].position;
-    vec3 p2 = attribIn[2].position;
-    vec3 N = normalize(cross(p1 - p0, p2 - p0));
-    vec3 center = (p0 + p1 + p2) / 3.0;
-    vec3 centerView = (modelView * vec4(center, 1.0)).xyz;
-    vec3 normalView = normalize(normalMatrix * N);
-    vec3 V = normalize(-centerView);
-    vec3 ambientSum = vec3(0.0);
-    vec3 diffuseSum = vec3(0.0);
-    vec3 specularSum = vec3(0.0);
-    for (int i = 0; i < 3; i++) {
-        vec3 lightPosition = (view * vec4(lights[i].position, 1.0)).xyz;
-        vec3 L = normalize(lightPosition - centerView);
-        float NdotL = max(dot(normalView, L), 0.0);
-        vec3 ambient = mat.ambient * lights[i].ambient;
-        vec3 diffuse = mat.diffuse * lights[i].diffuse * NdotL;
-        vec3 specular = vec3(0.0);
-        if (NdotL > 0.0) {
-            if (useBlinn) {
-                vec3 H = normalize(L + V);
-                specular = mat.specular * lights[i].specular * pow(max(dot(normalView, H), 0.0), mat.shininess);
-            } else {
-                vec3 R = reflect(-L, normalView);
-                specular = mat.specular * lights[i].specular * pow(max(dot(V, R), 0.0), mat.shininess);
-            }
-        }
-        if (useSpotlight) {
-            vec3 spotDir = normalize((view * vec4(lights[i].spotDirection, 0.0)).xyz);
-            float cosGamma = dot(-L, spotDir);
-            float cosDelta = cos(radians(spotOpeningAngle));
-            if (cosGamma > cosDelta) {
-                float factor;
-                if (useDirect3D) {
-                    float cosOuter = pow(cosDelta, 1.01 + spotExponent/2.0);
-                    factor = smoothstep(cosOuter, cosDelta, cosGamma);
-                } else {
-                    factor = pow(cosGamma, spotExponent);
-                }
-                ambient *= factor;
-                diffuse *= factor;
-                specular *= factor;
-            } else {
-                ambient = diffuse = specular = vec3(0.0);
-            }
-        }
-        ambientSum += ambient;
-        diffuseSum += diffuse;
-        specularSum += specular;
+    vec3 edge1 = attribIn[1].position - attribIn[0].position;
+    vec3 edge2 = attribIn[2].position - attribIn[0].position;
+    vec3 faceNormal = cross(edge1, edge2);
+    
+    vec3 faceCenter = (attribIn[0].position + attribIn[1].position + attribIn[2].position) * 0.333333;
+    vec3 normalView = normalize(normalMatrix * faceNormal);
+    vec4 centerView = modelView * vec4(faceCenter, 1.0);
+    vec3 viewDir = normalize(-centerView.xyz);
+    
+    float cosAngleLimit = cos(radians(spotOpeningAngle));
+    float cosFalloff = pow(cosAngleLimit, 1.01 + spotExponent / 2.0);
+    
+    vec3 lightVectors[3];
+    vec3 spotVectors[3];
+    vec3 diffuseResults[3];
+    vec3 specularResults[3];
+    float spotIntensities[3];
+    
+    vec3 ambientTotal = mat.ambient * (lightModelAmbient + 
+                      lights[0].ambient + 
+                      lights[1].ambient + 
+                      lights[2].ambient);
+    
+    vec3 diffuseTotal = vec3(0.0);
+    vec3 specularTotal = vec3(0.0);
+    
+    for(int i = 0; i < 3; i++) {
+        lightVectors[i] = normalize((view * vec4(lights[i].position, 1.0)).xyz - centerView.xyz);
+        spotVectors[i] = normalize(mat3(view) * -lights[i].spotDirection);
+        
+        calcLightComponents(i, normalView, lightVectors[i], viewDir, diffuseResults[i], specularResults[i]);
+        
+        spotIntensities[i] = useSpotlight ? 
+            calcSpotIntensity(spotVectors[i], lightVectors[i], normalView, cosAngleLimit, cosFalloff) : 1.0;
+        
+        diffuseTotal += diffuseResults[i] * spotIntensities[i];
+        specularTotal += specularResults[i] * spotIntensities[i];
     }
-    for (int i = 0; i < 3; i++) {
+    
+    for(int i = 0; i < gl_in.length(); i++) {
+        gl_Position = gl_in[i].gl_Position;
         attribOut.texCoords = attribIn[i].texCoords;
         attribOut.emission = mat.emission;
-        attribOut.ambient = ambientSum;
-        attribOut.diffuse = diffuseSum;
-        attribOut.specular = specularSum;
-        gl_Position = gl_in[i].gl_Position;
+        attribOut.ambient = ambientTotal;
+        attribOut.diffuse = diffuseTotal;
+        attribOut.specular = specularTotal;
         EmitVertex();
     }
     EndPrimitive();
